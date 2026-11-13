@@ -1,0 +1,16 @@
+steps:
+  - task: UseDotNet@2
+    inputs:
+      version: $(dotNetVersion)
+      includePreviewVersions: true
+
+  - script: |
+     npm install
+    displayName: 'npm install'
+    workingDirectory: 'Flashcards.Web.App'
+
+  - task: DotNetCoreCLI@2
+    name: "Build"
+    inputs:
+      command: 'build'
+      projects: '**/Flashcards.Web.App.csproj'

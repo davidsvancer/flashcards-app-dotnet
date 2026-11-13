@@ -1,0 +1,27 @@
+@page "/play/{Id:guid}"
+@layout PlayLayout
+@inherits PageBase
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<div class="w-full h-full flex flex-col items-center px-4">
+    @if (!_showStats)
+    {  
+        @if (CardCollection != null)
+        {
+            <div>
+                <PlayWindow _cardCollection="CardCollection" _index="_index" OnFlip="FlipCard" OnNext="HandleClickNext" OnBack="HandleClickBack"
+                            OnMarkCorrect="HandleMarkCorrectAsync" OnMarkWrong="HandleMarkWrongAsync" IsAnswered="IsAnswered" GetAnswerState="@(id => GetAnswerState(id).ToString())" />
+            </div>
+        }
+    }
+    else
+    { 
+        <div>
+                <LessonStatistics Lesson="@_createdLesson" OnPlayAgain="@HandlePlayAgain" OnTryDifferent="@HandleTryDifferentCollection"/>
+        </div>
+    }
+</div>
+
+@code {
+}

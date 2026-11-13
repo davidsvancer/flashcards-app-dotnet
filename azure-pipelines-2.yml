@@ -1,0 +1,28 @@
+trigger:
+- master
+
+variables:
+  buildConfiguration: 'Release'
+  dotNetFramework: 'net9.0'
+  dotNetVersion: '9.0.x'
+  targetRuntime: 'win-x64'
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+  - template: CI_CD/build-WEB.yml
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'publish'
+      publishWebProjects: false
+      projects: '**/Flashcards.Web.App.csproj'
+      arguments: '--configuration $(buildConfiguration) --framework $(dotNetFramework) --output $(Build.ArtifactStagingDirectory)/web'
+      modifyOutputPath: false
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/web'
+      ArtifactName: 'WEB'
+      publishLocation: 'Container'

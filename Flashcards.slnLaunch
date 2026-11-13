@@ -1,0 +1,37 @@
+[
+  {
+    "Name": "API + Web UI",
+    "Projects": [
+      {
+        "Path": "Flashcards.Api.App\\Flashcards.Api.App.csproj",
+        "Action": "Start",
+        "DebugTarget": "Flashcards.Api"
+      },
+      {
+        "Path": "Flashcards.Web.App\\Flashcards.Web.App.csproj",
+        "Action": "Start",
+        "DebugTarget": "Flashcards.Web.App"
+      }
+    ]
+  },
+  {
+    "Name": "API + Web UI + Identity",
+    "Projects": [
+      {
+        "Path": "Flashcards.Api.App\\Flashcards.Api.App.csproj",
+        "Action": "Start",
+        "DebugTarget": "Flashcards.Api"
+      },
+      {
+        "Path": "Flashcards.IdentityProvider.App\\Flashcards.IdentityProvider.App.csproj",
+        "Action": "Start",
+        "DebugTarget": "SelfHost"
+      },
+      {
+        "Path": "Flashcards.Web.App\\Flashcards.Web.App.csproj",
+        "Action": "Start",
+        "DebugTarget": "Flashcards.Web.App"
+      }
+    ]
+  }
+]

@@ -1,0 +1,268 @@
+﻿@page "/cards"
+@namespace Flashcards.Web.App.Pages
+@layout ListLayout
+@inherits PageBase
+@using Microsoft.AspNetCore.Authorization
+@using Flashcards.Common.Models
+@using Flashcards.Common.Enums
+@using Flashcards.Web.App.Components 
+@attribute [Authorize]
+
+@{
+    RenderFragment paginationControls = @<div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
+        <div class="text-slate-500">Page <span class="font-bold text-slate-800">@CurrentPage</span></div>
+        <div class="flex items-center gap-2">
+            <button class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 bg-white" @onclick="GoToPreviousPage" disabled="@(CurrentPage <= 1)">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg> Previous
+            </button>
+            <button class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 bg-white" @onclick="GoToNextPage" disabled="@(!HasNextPage)">
+                Next <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </button>
+        </div>
+    </div>;
+}
+
+<div class="w-[95%] max-w-[1800px] mx-auto py-12 space-y-8">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+            <div>
+                <h2 class="font-bold text-3xl text-slate-800 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-indigo-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    Cards Library
+                </h2>
+                <p class="text-slate-500 mt-1 text-sm">Browse, create, and manage study cards.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full xl:w-auto items-center flex-wrap">
+                <div class="relative group w-full sm:w-[250px]">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition shadow-sm outline-none" placeholder="Search cards..." @bind="SearchString" @bind:event="oninput" @bind:after="OnSearchChanged" />
+                </div>
+
+                <div class="relative group w-full sm:w-[160px]">
+                    <select class="w-full pl-4 pr-10 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition shadow-sm outline-none appearance-none bg-white text-slate-700 cursor-pointer" @bind="SelectedTypeFilter" @bind:after="OnSearchChanged">
+                        <option value="">All Types</option>
+                        @foreach (var type in Enum.GetValues<ContentType>()) { <option value="@type">@type</option> }
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    </div>
+                </div>
+
+                <div class="relative group w-full sm:w-[130px]">
+                    <select class="w-full pl-4 pr-10 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition shadow-sm outline-none appearance-none bg-white text-slate-700 cursor-pointer" @bind="SelectedSort" @bind:after="OnSearchChanged">
+                        <option value="default">Default</option>
+                        <option value="az">A-Z</option>
+                        <option value="za">Z-A</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" /></svg>
+                    </div>
+                </div>
+
+                <div class="bg-slate-100 p-1 rounded-xl flex items-center">
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 @(ActiveTab == "my" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700")" @onclick='() => SetTab("my")'>My Cards</button>
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 @(ActiveTab == "all" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700")" @onclick='() => SetTab("all")'>All Cards</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (DisplayedCards.Any() || CurrentPage > 1)
+    {
+        <div class="flex justify-end">@paginationControls</div>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animation-fade-in">
+        @if (ActiveTab == "my")
+        {
+            <div class="h-[320px] w-full">
+                @if (!_showCreateForm)
+                {
+                    <button class="w-full h-full border-2 border-dashed border-indigo-200 rounded-2xl flex flex-col items-center justify-center gap-4 text-indigo-400 hover:bg-indigo-50/50 hover:border-indigo-400 hover:text-indigo-600 transition duration-300 group" @onclick="HandleOpenForm">
+                        <div class="p-4 bg-indigo-50 rounded-full group-hover:bg-indigo-100 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                        </div>
+                        <span class="font-semibold text-lg">Create new</span>
+                    </button>
+                }
+                else
+                {
+                    <div class="h-full w-full bg-white rounded-2xl shadow-xl border border-indigo-100 p-5 flex flex-col gap-3 overflow-y-auto">
+                        <h3 class="font-bold text-slate-800 text-sm">New Card</h3>
+                        @if (_model.QuestionType == ContentType.Image)
+                        {
+                            <input class="w-full p-2 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-indigo-500 outline-none" @bind="_model.QuestionContent" placeholder="Paste Image URL (https://...)" />
+                            @if (!string.IsNullOrEmpty(_model.QuestionContent))
+                            {
+                                <div class="h-14 w-full bg-slate-50 border border-slate-100 rounded flex justify-center items-center overflow-hidden">
+                                    <img src="@_model.QuestionContent" class="h-full object-contain" alt="Preview" onerror="this.style.display='none'" />
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <textarea class="w-full p-2 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-14" @bind="_model.QuestionContent" placeholder="Question text..."></textarea>
+                        }
+                        @if (_model.AnswerType == ContentType.Image)
+                        {
+                            <input class="w-full p-2 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-indigo-500 outline-none" @bind="_model.AnswerContent" placeholder="Paste Image URL (https://...)" />
+                            @if (!string.IsNullOrEmpty(_model.AnswerContent))
+                            {
+                                <div class="h-14 w-full bg-slate-50 border border-slate-100 rounded flex justify-center items-center overflow-hidden">
+                                    <img src="@_model.AnswerContent" class="h-full object-contain" alt="Preview" onerror="this.style.display='none'" />
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <textarea class="w-full p-2 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-14" @bind="_model.AnswerContent" placeholder="Answer text..."></textarea>
+                        }
+                        
+                        <input class="w-full p-2 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-indigo-500 outline-none" @bind="_model.Description" placeholder="Description (optional)..." />
+                        <div class="flex gap-2">
+                            <select class="w-1/2 p-1 border border-slate-200 rounded text-xs" @bind="_model.QuestionType">
+                                @foreach (var t in Enum.GetValues<ContentType>()) { <option value="@t">@t</option> }
+                            </select>
+                            <select class="w-1/2 p-1 border border-slate-200 rounded text-xs" @bind="_model.AnswerType">
+                                @foreach (var t in Enum.GetValues<ContentType>()) { <option value="@t">@t</option> }
+                            </select>
+                        </div>
+                        <div class="flex gap-2 mt-auto">
+                            <button class="flex-1 bg-indigo-600 text-white py-1.5 rounded text-xs hover:bg-indigo-700 font-bold" @onclick="SubmitCreate">Save</button>
+                            <button class="flex-1 border border-slate-300 text-slate-600 py-1.5 rounded text-xs hover:bg-slate-50" @onclick="HandleCancel">Cancel</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (DisplayedCards.Any())
+        {
+            @foreach (var card in DisplayedCards)
+            {
+                <div class="h-[320px] w-full">
+                    <CardCard Class="h-full w-full" Card="card" IsOwner="@IsOwner(card)" OnClick="@(() => OpenDetailModal(card))" OnEdit="@(() => OnEditCard(card))" OnDelete="@(() => OnDeleteCard(card))" />
+                </div>
+            }
+        }
+    </div>
+
+    @if (!DisplayedCards.Any() && (ActiveTab == "all" || !_showCreateForm))
+    {
+        <div class="flex flex-col items-center justify-center w-full h-[200px] text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 mb-2 text-slate-300">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <p>No cards match your current filters.</p>
+        </div>
+    }
+
+    @if (DisplayedCards.Any() || CurrentPage > 1)
+    {
+        <div class="flex justify-end">@paginationControls</div>
+    }
+
+    @if (_showDetailModal)
+    {
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animation-fade-in" @onclick="CloseDetailModal">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative flex flex-col" @onclick:stopPropagation>
+                @if (_selectedCardDetail == null)
+                {
+                    <div class="p-12 flex flex-col items-center justify-center text-slate-400 gap-4">
+                        <svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>Loading details...</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800">Card Detail</h3>
+                            <div class="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" /></svg>
+                                <span>Created: @_selectedCardDetail.DateCreated.ToString("g")</span>
+                            </div>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-200 rounded-full transition" @onclick="CloseDetailModal">✕</button>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center gap-3">
+                            @if (_selectedCardDetail.Owner != null)
+                            {
+                                <div class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-sm font-bold text-indigo-600 shadow-sm">
+                                    @(_selectedCardDetail.Owner.Name.Length > 0 ? _selectedCardDetail.Owner.Name.Substring(0, 1).ToUpper() : "?")
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Owner</span>
+                                    <span class="text-sm font-semibold text-slate-700">@_selectedCardDetail.Owner.Name</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="flex flex-col">
+                                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Owner</span>
+                                    <span class="text-sm text-slate-500 italic">Unknown / System</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-indigo-500 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Question</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 font-semibold uppercase">@_selectedCardDetail.QuestionType</span>
+                            </div>
+                            <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm min-h-[60px] flex flex-col justify-center">
+                                @if (_selectedCardDetail.QuestionType == ContentType.Image)
+                                {
+                                    <div class="flex justify-center bg-slate-50 rounded-lg p-2"><img src="@_selectedCardDetail.QuestionContent" class="max-h-[300px] w-auto object-contain rounded shadow-sm" alt="Question Image" /></div>
+                                }
+                                else
+                                {
+                                    <span class="text-lg text-slate-800 font-serif">@_selectedCardDetail.QuestionContent</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Answer</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-100 font-semibold uppercase">@_selectedCardDetail.AnswerType</span>
+                            </div>
+                            <div class="p-4 bg-emerald-50/40 border border-emerald-100 rounded-xl shadow-sm min-h-[60px] flex flex-col justify-center">
+                                @if (_selectedCardDetail.AnswerType == ContentType.Image)
+                                {
+                                    <div class="flex justify-center bg-white/50 rounded-lg p-2"><img src="@_selectedCardDetail.AnswerContent" class="max-h-[300px] w-auto object-contain rounded shadow-sm" alt="Answer Image" /></div>
+                                }
+                                else
+                                {
+                                    <span class="text-lg text-slate-800 font-serif">@_selectedCardDetail.AnswerContent</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="space-y-1 pt-2 border-t border-slate-100">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Description</span>
+                            @if (!string.IsNullOrEmpty(_selectedCardDetail.Description))
+                            {
+                                <p class="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">@_selectedCardDetail.Description</p>
+                            }
+                            else
+                            {
+                                <p class="text-sm text-slate-300 italic p-2 border border-dashed border-slate-200 rounded-lg text-center">No description provided.</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,55 @@
+
+# .NET build output
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Node.js
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Build and test results
+TestResults/
+coverage/
+artifacts/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+secrets.json
+**/secrets.json
+
+# Identity and cryptographic keys
+**/keys/
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3

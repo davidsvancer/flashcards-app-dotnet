@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Facades\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flashcards.Common.BL\Flashcards.Common.BL.csproj" />
+    <ProjectReference Include="..\Flashcards.Common.Models\Flashcards.Common.Models.csproj" />
+    <ProjectReference Include="..\Flashcards.Common\Flashcards.Common.csproj" />
+    <ProjectReference Include="..\Flashcards.IdentityProvider.DAL\Flashcards.IdentityProvider.DAL.csproj" />
+  </ItemGroup>
+
+</Project>

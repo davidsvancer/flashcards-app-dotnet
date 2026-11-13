@@ -1,0 +1,18 @@
+﻿@namespace Flashcards.Web.App
+@inherits LayoutComponentBase
+
+<div class="flex flex-col h-screen">
+    <div class="flex-none bg-gray-800 text-white">
+        <NavMenu />
+    </div>
+
+    <main class="flex-1 overflow-y-auto">
+        <div class="bg-gray-100 p-4">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank" class="text-blue-500 hover:underline">About</a>
+        </div>
+
+        <article class="p-4">
+            @Body
+        </article>
+    </main>
+</div>

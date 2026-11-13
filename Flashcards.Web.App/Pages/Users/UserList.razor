@@ -1,0 +1,377 @@
+﻿@page "/users"
+@namespace Flashcards.Web.App.Pages.Users
+@layout ListLayout
+@inherits PageBase
+
+<div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+    <div>
+        <h3 class="text-lg font-bold leading-6 text-gray-900">System Users</h3>
+        <p class="text-sm text-gray-500 mt-1">Manage access and profile details.</p>
+    </div>
+    <div class="flex gap-3">
+        @if (!IsCreating && !IsEditing)
+        {
+        <button class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium shadow-sm transition flex items-center" @onclick="ShowCreateForm">
+            <span class="mr-2 text-lg leading-none">+</span> Add User
+        </button>
+        }
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div class="relative w-full sm:max-w-xs">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <input class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
+                   placeholder="Search users..."
+                   @bind="Filter"
+                   @bind:event="oninput" />
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Sort by:</label>
+            <select class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg"
+                    @onchange="HandleSortChange"
+                    value="@_sortBy">
+                <option value="default">Default</option>
+                <option value="ascending">Name (A-Z)</option>
+                <option value="descending">Name (Z-A)</option>
+            </select>
+        </div>
+    </div>
+
+    @if (IsCreating)
+    {
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-indigo-100 mb-8 animation-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <h4 class="text-lg font-bold text-gray-800">New User Details</h4>
+            <button class="text-gray-400 hover:text-gray-600" @onclick="CancelCreate">✕</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Display Name</label>
+                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                           placeholder="e.g. John Doe" @bind="Input.DisplayName" />
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Unique Identity name</label>
+                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                           placeholder="johndoe" @bind="Input.IdentityName" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Password</label>
+                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                           type="password" placeholder="••••••••" @bind="Input.Password" />
+                </div>
+            </div>
+            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-gray-100">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                        Profile Picture URL <span class="text-gray-400 font-normal normal-case">(Optional)</span>
+                    </label>
+                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                           placeholder="https://..." @bind="Input.ProfilePictureUrl" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Role</label>
+                    <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-white"
+                            @bind="Input.Role">
+                        <option value="@RoleType.User">User</option>
+                        <option value="@RoleType.Admin">Administrator</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+        <div class="mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 text-sm">
+            @ErrorMessage
+        </div>
+        }
+        <div class="mt-6 flex gap-3 justify-end">
+            <button class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition" @onclick="CancelCreate">Cancel</button>
+            <button class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition" @onclick="CreateUser">
+                Create User
+            </button>
+        </div>
+    </div>
+    }
+
+    @if (IsEditing)
+    {
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-orange-100 mb-8 animation-fade-in">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Edit User
+            </h4>
+            <button class="text-gray-400 hover:text-gray-600" @onclick="CancelEdit">✕</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Display Name</label>
+                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
+                           placeholder="e.g. John Doe" @bind="EditInput.Name" />
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                        Profile Picture URL <span class="text-gray-400 font-normal normal-case">(Optional)</span>
+                    </label>
+                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
+                           placeholder="https://..." @bind="EditInput.PhotoUrl" />
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+        <div class="mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 text-sm">
+            @ErrorMessage
+        </div>
+        }
+
+        <div class="mt-6 flex gap-3 justify-end">
+            <button class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition" @onclick="CancelEdit">Cancel</button>
+            <button class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold shadow-md transition flex items-center gap-2"
+                    @onclick="UpdateUser" disabled="@IsSubmitting">
+                @if (IsSubmitting) { <span>Saving...</span> } else { <span>Save Changes</span> }
+            </button>
+        </div>
+    </div>
+    }
+
+    <div class="flex flex-col">
+        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg bg-white">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Profile</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="relative px-6 py-3">
+                                <span class="sr-only">Actions</span>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach (var u in Users)
+                        {
+                        <tr class="transition group cursor-pointer @(IsEditing && EditInput.Id == u.Id ? "bg-orange-50" : "hover:bg-blue-50")"
+                            @onclick="() => OpenUserDetails(u)">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="ml-4 w-full max-w-xs">
+                                        <input type="text" class="text-sm font-semibold text-gray-900 border-none focus:ring-0 p-0 bg-transparent w-full cursor-pointer hover:text-indigo-600 transition"
+                                               @bind="u.Name" placeholder="Enter name..." @onclick:stopPropagation="true" readonly />
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @(u.Role == RoleType.Admin ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800")">
+                                        @u.Role
+                                    </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @if (u.IsDeleted)
+                                {
+                                <span class="flex items-center gap-1.5">
+                                            <span class="h-2 w-2 rounded-full bg-gray-300"></span> Inactive
+                                        </span>
+                                }
+                                else
+                                {
+                                <span class="flex items-center gap-1.5">
+                                            <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span> Active
+                                        </span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                @if (u.Role != RoleType.Admin)
+                                {
+                                <div class="flex justify-end gap-2">
+                                    @if (!u.IsDeleted)
+                                    {
+                                    <button class="text-gray-400 hover:text-orange-500 transition p-2 rounded-full hover:bg-orange-50"
+                                            @onclick="() => ShowEditForm(u)"
+                                            @onclick:stopPropagation="true"
+                                            title="Edit User">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+
+                                    <button class="text-gray-400 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50"
+                                            @onclick="() => DeleteUser(u)"
+                                            @onclick:stopPropagation="true"
+                                            title="Delete User">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                    }
+                                    else
+                                    {
+                                    <button class="text-gray-300 cursor-not-allowed p-2 rounded-full" disabled>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+                                    <button class="text-gray-300 cursor-not-allowed p-2 rounded-full" disabled>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                    }
+                                </div>
+                                }
+                                else
+                                {
+                                <span class="text-gray-300 cursor-not-allowed text-xs">Protected</span>
+                                }
+                            </td>
+                        </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (TotalPages > 1)
+                {
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow-sm">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                @onclick="PreviousPage" disabled="@(_currentPage == 1)">
+                            Previous
+                        </button>
+                        <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                @onclick="NextPage" disabled="@(_currentPage == TotalPages)">
+                            Next
+                        </button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing page <span class="font-medium">@_currentPage</span> of <span class="font-medium">@TotalPages</span>
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        @onclick="PreviousPage" disabled="@(_currentPage == 1)">
+                                    <span class="sr-only">Previous</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                        @_currentPage
+                                    </span>
+
+                                <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        @onclick="NextPage" disabled="@(_currentPage == TotalPages)">
+                                    <span class="sr-only">Next</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (_selectedUser != null)
+    {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+         @onclick="CloseUserDetails">
+
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
+             @onclick:stopPropagation="true">
+
+            <div class="relative h-28 bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+                <button class="absolute top-4 right-4 text-white/80 hover:text-white transition"
+                        @onclick="CloseUserDetails">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <div class="absolute -bottom-10">
+                    @if (!string.IsNullOrEmpty(_selectedUser.PhotoUrl))
+                    {
+                    <img src="@_selectedUser.PhotoUrl"
+                         alt="@_selectedUser.Name"
+                         class="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg bg-white" />
+                    }
+                    else
+                    {
+                    <div class="w-24 h-24 rounded-full bg-white text-indigo-600 flex items-center justify-center text-3xl font-bold ring-4 ring-white shadow-lg">
+                        @GetInitials(_selectedUser.Name)
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <div class="px-8 pt-14 pb-8 space-y-6 text-center">
+
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900">@_selectedUser.Name</h3>
+                </div>
+
+                <div class="flex justify-center gap-3">
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold @(_selectedUser.Role == RoleType.Admin ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800")">
+                            @_selectedUser.Role
+                        </span>
+                    @if (!_selectedUser.IsDeleted)
+                    {
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Active
+                            </span>
+                    }
+                    else
+                    {
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span> Inactive
+                            </span>
+                    }
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-left mt-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div class="col-span-2">
+                        <span class="block text-xs text-gray-400 uppercase font-bold tracking-wider">User ID</span>
+                        <span class="block text-sm font-medium text-gray-700 truncate" title="@_selectedUser.Id">@_selectedUser.Id</span>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-center">
+                    <button class="w-full px-6 py-3 border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition"
+                            @onclick="CloseUserDetails">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>
